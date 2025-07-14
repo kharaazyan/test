@@ -1,142 +1,335 @@
-CXX = g++
-CXXFLAGS = -std=c++17 -I./include
-LDFLAGS = -lcrypto -lssl
+# === Project Metadata ===
+PROJECT      := cli-netsectool
+VERSION      := 2.0.0
 
-SRCDIR = src
-OBJDIR = obj
-BINDIR = build
-WEBDIR = web
-INCLUDE_DIR = include
+# === Directories ===
+SRC_DIR      := src
+INC_DIR      := include
+BUILD_DIR    := build
+BIN_DIR      := bin
+DIST_DIR     := dist
+TEST_DIR     := tests
+DEPS_DIR     := deps
+EXTERNAL_DIR := external
+WEB_DIR      := web
 
-SOURCES = $(wildcard $(SRCDIR)/*.cpp)
-OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-TARGET = $(BINDIR)/CLI-NetSecTool
+# === Tools ===
+CXX          ?= g++
+AR           ?= ar
+RM           := rm -rf
+MKDIR        := mkdir -p
+CURL         := curl
+WGET         := wget
+GIT          := git
+NPM          := npm
 
-.PHONY: all clean directories setup build deps web-build download-deps
+# === Flags ===
+CXXFLAGS     := -std=c++20 -Wall -Wextra -I$(INC_DIR) -I$(EXTERNAL_DIR) -I$(EXTERNAL_DIR)/termcolor -I. -pthread -w
+LDFLAGS      := -pthread -lcurl -lssl -lcrypto -lspdlog
+DEBUG_FLAGS  := -g -O0 -DDEBUG
+RELEASE_FLAGS:= -O2 -DNDEBUG
 
-# Default target
-all: setup build
+# === Build Type ===
+BUILD        := release
+CXXFLAGS     += $(RELEASE_FLAGS)
+BUILD_TYPE   := Release
 
-# Setup target - installs dependencies and initializes the project
-setup: check-deps install-deps download-deps init-project
+# === Source/Objects/Deps ===
+SRCS         := $(wildcard $(SRC_DIR)/*.cpp)
+OBJS         := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS))
+DEPS         := $(OBJS:.o=.d)
 
-# Build target - builds CLI tool and web interface
-build: directories $(TARGET) web-build
+# Config is header-only, no separate compilation needed
 
-# Download required header-only libraries
-download-deps:
-	@echo "Downloading dependencies..."
-	@mkdir -p $(INCLUDE_DIR)
-	@if [ ! -f "$(INCLUDE_DIR)/json.hpp" ]; then \
-		echo "Downloading nlohmann/json..." && \
-		curl -sSL https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp -o $(INCLUDE_DIR)/json.hpp; \
-	fi
-	@if [ ! -f "$(INCLUDE_DIR)/spdlog/spdlog.h" ]; then \
-		echo "Downloading spdlog..." && \
-		rm -rf /tmp/spdlog && \
-		git clone --depth 1 https://github.com/gabime/spdlog.git /tmp/spdlog && \
-		cp -r /tmp/spdlog/include/spdlog $(INCLUDE_DIR)/ && \
-		rm -rf /tmp/spdlog; \
-	fi
-	@if [ ! -f "$(INCLUDE_DIR)/httplib.h" ]; then \
-		echo "Downloading cpp-httplib..." && \
-		curl -sSL https://raw.githubusercontent.com/yhirose/cpp-httplib/master/httplib.h -o $(INCLUDE_DIR)/httplib.h; \
-	fi
-	@if [ ! -f "$(INCLUDE_DIR)/websocketpp" ]; then \
-		echo "Downloading WebSocket++..." && \
-		rm -rf /tmp/websocketpp && \
-		git clone --depth 1 https://github.com/zaphoyd/websocketpp.git /tmp/websocketpp && \
-		cp -r /tmp/websocketpp/websocketpp $(INCLUDE_DIR)/ && \
-		rm -rf /tmp/websocketpp; \
-	fi
+# === Executable(s) ===
+TARGET       := $(BIN_DIR)/$(PROJECT)
 
-# Check for required dependencies
-check-deps:
-	@echo "Checking dependencies..."
-	@which node >/dev/null 2>&1 || (echo "Installing Node.js..." && \
-		curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && \
-		sudo apt-get install -y nodejs)
-	@which npm >/dev/null 2>&1 || echo "npm is required but will be installed with Node.js"
-	@which make >/dev/null 2>&1 || (echo "Installing make..." && sudo apt-get install -y build-essential)
-	@which ipfs >/dev/null 2>&1 || (echo "Installing IPFS..." && \
-		cd /tmp && \
-		wget -q "https://dist.ipfs.tech/kubo/v0.20.0/kubo_v0.20.0_linux-amd64.tar.gz" -O ipfs.tar.gz && \
+# === Colors ===
+GREEN        := \033[0;32m
+YELLOW       := \033[1;33m
+RED          := \033[0;31m
+BLUE         := \033[0;34m
+NC           := \033[0m
+
+# === Verbosity ===
+V            ?= 0
+ifeq ($(V),0)
+    Q := @
+else
+    Q :=
+endif
+
+# === External Dependencies URLs ===
+IPFS_URL := https://dist.ipfs.tech/kubo/v0.20.0/kubo_v0.20.0_linux-amd64.tar.gz
+NLOHMANN_JSON_URL := https://github.com/nlohmann/json/releases/download/v3.12.0/json.hpp
+SPDLOG_URL := https://github.com/gabime/spdlog/releases/download/v1.12.0/spdlog.hpp
+TERMCOLOR_URL := https://raw.githubusercontent.com/ikalnytskyi/termcolor/master/include/termcolor/termcolor.hpp
+
+# === Dependency Checks ===
+.PHONY: check-deps install-deps check-system-libs download-external-deps check-ipfs install-ipfs
+
+# Check system libraries
+check-system-libs:
+	@echo "$(BLUE)[INFO] Checking system libraries...$(NC)"
+	@echo "$(BLUE)[INFO] Checking libcurl...$(NC)"
+	@pkg-config --exists libcurl || \
+		(echo "$(YELLOW)[WARN] libcurl not found. Installing...$(NC)" && \
+		sudo apt-get install -y libcurl4-openssl-dev || true)
+	
+	@echo "$(BLUE)[INFO] Checking OpenSSL...$(NC)"
+	@pkg-config --exists openssl || \
+		(echo "$(YELLOW)[WARN] OpenSSL not found. Installing...$(NC)" && \
+		sudo apt-get install -y libssl-dev || true)
+	
+	@echo "$(BLUE)[INFO] Checking pkg-config...$(NC)"
+	@which pkg-config > /dev/null 2>&1 || \
+		(echo "$(YELLOW)[WARN] pkg-config not found. Installing...$(NC)" && \
+		sudo apt-get install -y pkg-config || true)
+	
+	@echo "$(BLUE)[INFO] Checking spdlog...$(NC)"
+	@pkg-config --exists spdlog || \
+		(echo "$(YELLOW)[WARN] spdlog not found. Installing...$(NC)" && \
+		sudo apt-get install -y libspdlog-dev || true)
+	
+	@echo "$(BLUE)[INFO] Checking nlohmann-json...$(NC)"
+	@pkg-config --exists nlohmann_json || \
+		(echo "$(YELLOW)[WARN] nlohmann-json not found. Installing...$(NC)" && \
+		sudo apt-get install -y nlohmann-json3-dev || true)
+	@echo "$(GREEN)[✔] System libraries check passed$(NC)"
+
+# Check if IPFS is installed
+check-ipfs:
+	@echo "$(BLUE)[INFO] Checking IPFS installation...$(NC)"
+	@which ipfs > /dev/null 2>&1 || \
+		(echo "$(YELLOW)[WARN] IPFS not found. Installing...$(NC)" && $(MAKE) install-ipfs)
+	@echo "$(GREEN)[✔] IPFS check passed$(NC)"
+
+# Install IPFS
+install-ipfs:
+	@echo "$(BLUE)[INFO] Installing IPFS manually...$(NC)"
+	@mkdir -p $(DEPS_DIR)
+	@cd $(DEPS_DIR) && \
+		($(WGET) -q $(IPFS_URL) -O ipfs.tar.gz || $(CURL) -L -o ipfs.tar.gz $(IPFS_URL)) && \
 		tar -xzf ipfs.tar.gz && \
 		sudo cp kubo/ipfs /usr/local/bin/ && \
-		rm -rf kubo ipfs.tar.gz)
+		rm -rf kubo ipfs.tar.gz
+	@rm -rf $(DEPS_DIR)
+	@echo "$(GREEN)[✔] IPFS installed successfully$(NC)"
 
-# Install system dependencies
-install-deps:
-	@echo "Installing system dependencies..."
-	@sudo apt-get update
-	@sudo apt-get install -y build-essential curl wget git pkg-config
-	@sudo apt-get install -y libcurl4-openssl-dev libssl-dev libcrypto++-dev
-	@sudo apt-get install -y libboost-all-dev libsystemd-dev
-
-# Initialize project (create directories, generate keys, etc.)
-init-project:
-	@echo "Initializing project..."
-	@mkdir -p config keys logs cache test_data certs
-	@if [ ! -f "keys/private_key.zip" ]; then \
-		openssl genrsa -out keys/private_key.pem 2048; \
-		openssl rsa -in keys/private_key.pem -pubout -out keys/public_key.pem; \
-		echo "cli-netsectool-password-2025" > keys/password.txt; \
-		zip -P "cli-netsectool-secure-2025" keys/private_key.zip keys/private_key.pem; \
-		zip -P "cli-netsectool-secure-2025" keys/p.zip keys/password.txt; \
-		chmod 600 keys/private_key.pem keys/public_key.pem keys/private_key.zip keys/p.zip; \
-		rm -f keys/private_key.pem keys/password.txt; \
+# Download external dependencies
+download-external-deps:
+	@echo "$(BLUE)[INFO] Downloading external dependencies...$(NC)"
+	@mkdir -p $(EXTERNAL_DIR)
+	
+	# Download nlohmann/json
+	@echo "$(BLUE)[INFO] Downloading nlohmann/json v3.12.0...$(NC)"
+	@if [ ! -f $(EXTERNAL_DIR)/json.hpp ]; then \
+		($(WGET) -q $(NLOHMANN_JSON_URL) -O $(EXTERNAL_DIR)/json.hpp || \
+		$(CURL) -L -o $(EXTERNAL_DIR)/json.hpp $(NLOHMANN_JSON_URL)) && \
+		echo "$(GREEN)[✔] nlohmann/json downloaded$(NC)" || \
+		echo "$(RED)[ERROR] Failed to download nlohmann/json$(NC)"; \
+	else \
+		echo "$(GREEN)[✔] nlohmann/json already exists$(NC)"; \
 	fi
-	@if [ ! -d "$$HOME/.ipfs" ]; then \
-		ipfs init; \
+	
+	# Download spdlog
+	@echo "$(BLUE)[INFO] Downloading spdlog...$(NC)"
+	@if [ ! -f $(EXTERNAL_DIR)/spdlog.hpp ]; then \
+		($(WGET) -q $(SPDLOG_URL) -O $(EXTERNAL_DIR)/spdlog.hpp || \
+		$(CURL) -L -o $(EXTERNAL_DIR)/spdlog.hpp $(SPDLOG_URL)) && \
+		echo "$(GREEN)[✔] spdlog downloaded$(NC)" || \
+		echo "$(RED)[ERROR] Failed to download spdlog$(NC)"; \
+	else \
+		echo "$(GREEN)[✔] spdlog already exists$(NC)"; \
 	fi
-	@if ! ipfs key list | grep -q "cli-netsectool"; then \
-		ipfs key gen cli-netsectool --type=rsa --size=2048; \
+	
+	# Download termcolor
+	@echo "$(BLUE)[INFO] Downloading termcolor...$(NC)"
+	@mkdir -p $(EXTERNAL_DIR)/termcolor
+	@if [ ! -f $(EXTERNAL_DIR)/termcolor/termcolor.hpp ]; then \
+		($(WGET) -q $(TERMCOLOR_URL) -O $(EXTERNAL_DIR)/termcolor/termcolor.hpp || \
+		$(CURL) -L -o $(EXTERNAL_DIR)/termcolor/termcolor.hpp $(TERMCOLOR_URL)) && \
+		echo "$(GREEN)[✔] termcolor downloaded$(NC)" || \
+		echo "$(RED)[ERROR] Failed to download termcolor$(NC)"; \
+	else \
+		echo "$(GREEN)[✔] termcolor already exists$(NC)"; \
 	fi
-	@if [ ! -f "keys/ipns_key.txt" ]; then \
-		ipfs key list | grep "cli-netsectool" | awk '{print $$1}' > keys/ipns_key.txt; \
-		chmod 600 keys/ipns_key.txt; \
-	fi
 
-# Create directories
-directories:
-	@mkdir -p $(OBJDIR) $(BINDIR)
+# Check and install system dependencies
+check-deps: check-ipfs check-system-libs
+	@echo "$(BLUE)[INFO] Checking system dependencies...$(NC)"
+	@which apt-get > /dev/null 2>&1 || \
+		(echo "$(RED)[ERROR] apt-get not found. This makefile is for Ubuntu only.$(NC)" && exit 1)
+	@echo "$(GREEN)[✔] System dependencies check passed$(NC)"
 
-# Build CLI tool
-$(TARGET): $(OBJECTS)
-	$(CXX) $(OBJECTS) -o $(TARGET) $(LDFLAGS)
+# Install all dependencies
+install-deps: check-deps check-web-deps download-external-deps
+	@echo "$(BLUE)[INFO] Installing build dependencies...$(NC)"
+	@echo "$(BLUE)[INFO] Installing via apt-get...$(NC)"
+	@sudo apt-get update || true
+	@sudo apt-get install -y build-essential || true
+	@sudo apt-get install -y curl wget git pkg-config || true
+	@sudo apt-get install -y libcurl4-openssl-dev libssl-dev libspdlog-dev nlohmann-json3-dev || true
+	@echo "$(GREEN)[✔] Dependencies installation complete$(NC)"
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+# === Build Targets ===
+.PHONY: all clean rebuild install uninstall test lint format docs help deps main setup auto-clean web-build
 
-# Build web interface
+# Default target
+all: deps main web-build
+	@echo "$(GREEN)[✔] Build complete ($(BUILD_TYPE))$(NC)"
+
+# Web interface target
 web-build:
-	@echo "Building web interface..."
-	@mkdir -p $(BINDIR)/web
-	@if [ -d "$(WEBDIR)/frontend" ]; then \
-		cd $(WEBDIR)/frontend && \
-		npm install --silent && \
-		npm run build && \
-		cp -r dist ../../$(BINDIR)/web/frontend && \
-		cp package.json ../../$(BINDIR)/web/frontend/; \
+	@echo "$(BLUE)[INFO] Building web interface...$(NC)"
+	@if [ -d "$(WEB_DIR)/frontend" ]; then \
+		cd $(WEB_DIR)/frontend && \
+		$(NPM) install --silent && \
+		$(NPM) run build && \
+		$(MKDIR) -p ../../$(BUILD_DIR)/web/frontend && \
+		cp -r dist ../../$(BUILD_DIR)/web/frontend && \
+		cp package.json ../../$(BUILD_DIR)/web/frontend/ && \
+		echo "$(GREEN)[✔] Frontend built successfully$(NC)"; \
+	else \
+		echo "$(YELLOW)[WARN] Frontend directory not found. Skipping...$(NC)"; \
 	fi
-	@if [ -d "$(WEBDIR)/backend" ]; then \
-		cd $(WEBDIR)/backend && \
-		npm install --silent && \
-		npm run build && \
-		cp -r dist ../../$(BINDIR)/web/backend && \
-		cp package.json ../../$(BINDIR)/web/backend/ && \
-		cp -r node_modules ../../$(BINDIR)/web/backend/; \
+	@if [ -d "$(WEB_DIR)/backend" ]; then \
+		cd $(WEB_DIR)/backend && \
+		$(NPM) install --silent && \
+		$(NPM) run build && \
+		$(MKDIR) -p ../../$(BUILD_DIR)/web/backend && \
+		cp -r dist ../../$(BUILD_DIR)/web/backend && \
+		cp package.json ../../$(BUILD_DIR)/web/backend/ && \
+		cp -r node_modules ../../$(BUILD_DIR)/web/backend/ && \
+		echo "$(GREEN)[✔] Backend built successfully$(NC)"; \
+	else \
+		echo "$(YELLOW)[WARN] Backend directory not found. Skipping...$(NC)"; \
 	fi
 
-# Clean build artifacts
+# Check for Node.js and npm
+check-web-deps:
+	@echo "$(BLUE)[INFO] Checking web dependencies...$(NC)"
+	@which node > /dev/null 2>&1 || \
+		(echo "$(YELLOW)[WARN] Node.js not found. Installing...$(NC)" && \
+		curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && \
+		sudo apt-get install -y nodejs)
+	@which npm > /dev/null 2>&1 || \
+		echo "$(YELLOW)[WARN] npm will be installed with Node.js$(NC)"
+	@echo "$(GREEN)[✔] Web dependencies check passed$(NC)"
+
+# Setup target - run setup script
+setup:
+	@echo "$(BLUE)[INFO] Running setup script...$(NC)"
+	@if [ -f setup.sh ]; then \
+		chmod +x setup.sh && ./setup.sh; \
+	else \
+		echo "$(YELLOW)[WARN] setup.sh not found. Skipping setup.$(NC)"; \
+	fi
+
+# Dependencies target
+deps: install-deps
+
+# Build main executable
+main: $(TARGET)
+	@echo "$(GREEN)[✔] Main built successfully$(NC)"
+
+$(TARGET): $(OBJS) | $(BIN_DIR) $(BUILD_DIR) $(DIST_DIR) $(DEPS_DIR) $(EXTERNAL_DIR)
+	@echo "$(YELLOW)[Linking] $@$(NC)"
+	$(Q)$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	@echo "$(YELLOW)[Compiling] $<$(NC)"
+	$(Q)$(CXX) $(CXXFLAGS) -MMD -c $< -o $@
+
+$(BUILD_DIR) $(BIN_DIR) $(DIST_DIR) $(DEPS_DIR) $(EXTERNAL_DIR):
+	$(Q)$(MKDIR) $@
+
+-include $(DEPS)
+
 clean:
-	@rm -rf $(OBJDIR) $(BINDIR)
-	@rm -rf $(WEBDIR)/frontend/node_modules $(WEBDIR)/backend/node_modules
-	@rm -rf $(WEBDIR)/frontend/dist $(WEBDIR)/backend/dist
-	@echo "Cleaned build artifacts"
+	$(Q)$(RM) $(BUILD_DIR) $(BIN_DIR) $(DIST_DIR)
+	@if [ -d "$(WEB_DIR)/frontend/node_modules" ]; then \
+		$(RM) $(WEB_DIR)/frontend/node_modules; \
+	fi
+	@if [ -d "$(WEB_DIR)/backend/node_modules" ]; then \
+		$(RM) $(WEB_DIR)/backend/node_modules; \
+	fi
+	@if [ -d "$(WEB_DIR)/frontend/dist" ]; then \
+		$(RM) $(WEB_DIR)/frontend/dist; \
+	fi
+	@if [ -d "$(WEB_DIR)/backend/dist" ]; then \
+		$(RM) $(WEB_DIR)/backend/dist; \
+	fi
+	@echo "$(GREEN)[✔] Cleaned$(NC)"
 
-# Clean everything including dependencies and configuration
-clean-all: clean
-	@rm -rf config/* keys/* logs/* cache/* test_data/* certs/*
-	@rm -rf $(INCLUDE_DIR)/json.hpp $(INCLUDE_DIR)/spdlog $(INCLUDE_DIR)/httplib.h $(INCLUDE_DIR)/websocketpp
-	@echo "Cleaned all project files" 
+clean-deps:
+	$(Q)$(RM) $(DEPS_DIR)
+	@echo "$(GREEN)[✔] Dependencies cleaned$(NC)"
+
+clean-external:
+	$(Q)$(RM) $(EXTERNAL_DIR)
+	@echo "$(GREEN)[✔] External libraries cleaned$(NC)"
+
+clean-all: clean clean-deps clean-external
+	@echo "$(GREEN)[✔] All cleaned$(NC)"
+
+# Auto-clean target
+auto-clean:
+	@echo "$(BLUE)[INFO] Running auto-clean...$(NC)"
+	@if [ -f auto-clean.sh ]; then \
+		chmod +x auto-clean.sh && ./auto-clean.sh; \
+	else \
+		echo "$(YELLOW)[WARN] auto-clean.sh not found.$(NC)"; \
+	fi
+
+rebuild: clean all
+
+# === Installation Targets ===
+install: $(TARGET)
+	@echo "$(BLUE)[INFO] Installing $(PROJECT)...$(NC)"
+	@sudo cp $(TARGET) /usr/local/bin/ || \
+		(echo "$(RED)[ERROR] Failed to install main. Try running with sudo.$(NC)" && exit 1)
+	@echo "$(GREEN)[✔] $(PROJECT) installed to /usr/local/bin/$(NC)"
+
+uninstall:
+	@echo "$(BLUE)[INFO] Uninstalling $(PROJECT)...$(NC)"
+	@sudo rm -f /usr/local/bin/$(PROJECT) || true
+	@echo "$(GREEN)[✔] $(PROJECT) uninstalled$(NC)"
+
+# === Help ===
+help:
+	@echo "$(BLUE)Sergo Decryptor Build System (Ubuntu Only)$(NC)"
+	@echo ""
+	@echo "$(GREEN)Usage:$(NC) make [target] [V=1]"
+	@echo ""
+	@echo "$(GREEN)Build Targets:$(NC)"
+	@echo "  all        - Setup, install deps, build CLI and web interface (default)"
+	@echo "  setup      - Run automated setup script"
+	@echo "  main       - Build only main executable"
+	@echo "  web-build  - Build only web interface"
+	@echo "  deps       - Install all dependencies"
+	@echo "  clean      - Remove build artifacts"
+	@echo "  clean-deps - Remove downloaded dependencies"
+	@echo "  clean-external - Remove external libraries"
+	@echo "  clean-all  - Remove all artifacts and dependencies"
+	@echo "  auto-clean - Run auto-clean script"
+	@echo "  rebuild    - Clean and build"
+	@echo ""
+	@echo "$(GREEN)Installation Targets:$(NC)"
+	@echo "  install    - Install to system"
+	@echo "  uninstall  - Remove from system"
+	@echo ""
+	@echo "$(GREEN)Variables:$(NC)"
+	@echo "  V          - Verbose build (V=1)"
+	@echo ""
+	@echo "$(GREEN)Dependencies:$(NC)"
+	@echo "  C++20 compiler (g++)"
+	@echo "  Node.js and npm (web interface)"
+	@echo "  nlohmann/json v3.12.0"
+	@echo "  spdlog v1.12.0 (logging)"
+	@echo "  libcurl (HTTP requests)"
+	@echo "  libssl (encryption/decryption)"
+	@echo "  libcrypto++ (advanced cryptography)"
+	@echo "  termcolor (CLI colors)"
+	@echo "  IPFS v0.20.0 (distributed storage)"
+	@echo "  Standard Ubuntu libraries" 
