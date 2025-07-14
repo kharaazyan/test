@@ -182,28 +182,57 @@ all: deps main web-build
 # Web interface target
 web-build:
 	@echo "$(BLUE)[INFO] Building web interface...$(NC)"
-	@if [ -d "$(WEB_DIR)/frontend" ]; then \
+	@if [ -f "$(WEB_DIR)/frontend/package.json" ]; then \
+		echo "$(BLUE)[INFO] Building frontend...$(NC)" && \
 		cd $(WEB_DIR)/frontend && \
 		$(NPM) install --silent && \
 		$(NPM) run build && \
-		$(MKDIR) -p ../../$(BUILD_DIR)/web/frontend && \
-		cp -r dist ../../$(BUILD_DIR)/web/frontend && \
-		cp package.json ../../$(BUILD_DIR)/web/frontend/ && \
-		echo "$(GREEN)[✔] Frontend built successfully$(NC)"; \
+		if [ -d "dist" ]; then \
+			$(MKDIR) -p ../../$(BUILD_DIR)/web/frontend && \
+			cp -r dist ../../$(BUILD_DIR)/web/frontend && \
+			cp package.json ../../$(BUILD_DIR)/web/frontend/ && \
+			echo "$(GREEN)[✔] Frontend built successfully$(NC)"; \
+		else \
+			echo "$(RED)[ERROR] Frontend build failed - dist directory not created$(NC)" && \
+			exit 1; \
+		fi \
 	else \
-		echo "$(YELLOW)[WARN] Frontend directory not found. Skipping...$(NC)"; \
+		echo "$(YELLOW)[WARN] Frontend package.json not found. Skipping...$(NC)"; \
 	fi
-	@if [ -d "$(WEB_DIR)/backend" ]; then \
+	@if [ -f "$(WEB_DIR)/backend/package.json" ]; then \
+		echo "$(BLUE)[INFO] Building backend...$(NC)" && \
 		cd $(WEB_DIR)/backend && \
 		$(NPM) install --silent && \
+		if [ ! -f "tsconfig.json" ]; then \
+			echo "$(BLUE)[INFO] Creating tsconfig.json...$(NC)" && \
+			echo '{ \
+				"compilerOptions": { \
+					"target": "es2020", \
+					"module": "commonjs", \
+					"outDir": "./dist", \
+					"rootDir": "./src", \
+					"strict": true, \
+					"esModuleInterop": true, \
+					"skipLibCheck": true, \
+					"forceConsistentCasingInFileNames": true \
+				}, \
+				"include": ["src/**/*"], \
+				"exclude": ["node_modules"] \
+			}' > tsconfig.json; \
+		fi && \
 		$(NPM) run build && \
-		$(MKDIR) -p ../../$(BUILD_DIR)/web/backend && \
-		cp -r dist ../../$(BUILD_DIR)/web/backend && \
-		cp package.json ../../$(BUILD_DIR)/web/backend/ && \
-		cp -r node_modules ../../$(BUILD_DIR)/web/backend/ && \
-		echo "$(GREEN)[✔] Backend built successfully$(NC)"; \
+		if [ -d "dist" ]; then \
+			$(MKDIR) -p ../../$(BUILD_DIR)/web/backend && \
+			cp -r dist ../../$(BUILD_DIR)/web/backend && \
+			cp package.json ../../$(BUILD_DIR)/web/backend/ && \
+			cp -r node_modules ../../$(BUILD_DIR)/web/backend/ && \
+			echo "$(GREEN)[✔] Backend built successfully$(NC)"; \
+		else \
+			echo "$(RED)[ERROR] Backend build failed - dist directory not created$(NC)" && \
+			exit 1; \
+		fi \
 	else \
-		echo "$(YELLOW)[WARN] Backend directory not found. Skipping...$(NC)"; \
+		echo "$(YELLOW)[WARN] Backend package.json not found. Skipping...$(NC)"; \
 	fi
 
 # Check for Node.js and npm
