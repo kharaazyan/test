@@ -23,6 +23,8 @@ WGET         := wget
 GIT          := git
 NPM          := npm  # added npm tool
 
+.ONESHELL:  # use single shell per recipe
+
 # === Flags ===
 CXXFLAGS     := -std=c++20 -Wall -Wextra -I$(INC_DIR) -I$(EXTERNAL_DIR) -I$(EXTERNAL_DIR)/termcolor -I. -pthread -w
 LDFLAGS      := -pthread -lcurl -lssl -lcrypto -lspdlog
@@ -182,29 +184,34 @@ all: deps main web-build
 # --- Web Build ---
 
 web-build:
-	@echo "$(BLUE)[INFO] Building web interface...$(NC)"
-	@if [ -f "$(WEB_DIR)/frontend/package.json" ]; then \
-		cd $(WEB_DIR)/frontend && \
-		$(NPM) install --silent && \
-		$(NPM) run build && \
-		$(MKDIR) -p ../../$(DIST_DIR)/web/frontend && \
-		cp -r dist ../../$(DIST_DIR)/web/frontend && \
-		cp package.json ../../$(DIST_DIR)/web/frontend/ && \
+	@set -e; \
+	echo "$(BLUE)[INFO] Building web interface...$(NC)"; \
+	if [ -f "$(WEB_DIR)/frontend/package.json" ]; then \
+		echo "$(BLUE)[INFO] Building frontend...$(NC)"; \
+		cd $(WEB_DIR)/frontend; \
+		$(NPM) install --silent; \
+		$(NPM) run build; \
+		cd - >/dev/null; \
+		$(MKDIR) -p $(DIST_DIR)/web/frontend; \
+		cp -r $(WEB_DIR)/frontend/dist $(DIST_DIR)/web/frontend/; \
+		cp $(WEB_DIR)/frontend/package.json $(DIST_DIR)/web/frontend/; \
 		echo "$(GREEN)[✔] Frontend built successfully$(NC)"; \
 	else \
 		echo "$(YELLOW)[WARN] Frontend package.json not found - skipping frontend build.$(NC)"; \
-	fi
-	@if [ -f "$(WEB_DIR)/backend/package.json" ]; then \
-		cd $(WEB_DIR)/backend && \
-		$(NPM) install --silent && \
+	fi; \
+	if [ -f "$(WEB_DIR)/backend/package.json" ]; then \
+		echo "$(BLUE)[INFO] Building backend...$(NC)"; \
+		cd $(WEB_DIR)/backend; \
+		$(NPM) install --silent; \
 		if [ ! -f tsconfig.json ]; then \
 			echo '{"compilerOptions":{"target":"es2020","module":"commonjs","outDir":"./dist","rootDir":"./src","strict":true,"esModuleInterop":true,"skipLibCheck":true}}' > tsconfig.json; \
-		fi && \
-		$(NPM) run build && \
-		$(MKDIR) -p ../../$(DIST_DIR)/web/backend && \
-		cp -r dist ../../$(DIST_DIR)/web/backend && \
-		cp package.json ../../$(DIST_DIR)/web/backend/ && \
-		cp -r node_modules ../../$(DIST_DIR)/web/backend/ && \
+		fi; \
+		$(NPM) run build; \
+		cd - >/dev/null; \
+		$(MKDIR) -p $(DIST_DIR)/web/backend; \
+		cp -r $(WEB_DIR)/backend/dist $(DIST_DIR)/web/backend/; \
+		cp $(WEB_DIR)/backend/package.json $(DIST_DIR)/web/backend/; \
+		cp -r $(WEB_DIR)/backend/node_modules $(DIST_DIR)/web/backend/; \
 		echo "$(GREEN)[✔] Backend built successfully$(NC)"; \
 	else \
 		echo "$(YELLOW)[WARN] Backend package.json not found - skipping backend build.$(NC)"; \
