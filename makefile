@@ -6,21 +6,49 @@ SRCDIR = src
 OBJDIR = obj
 BINDIR = build
 WEBDIR = web
+INCLUDE_DIR = include
 
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 TARGET = $(BINDIR)/CLI-NetSecTool
 
-.PHONY: all clean directories setup build deps web-build
+.PHONY: all clean directories setup build deps web-build download-deps
 
 # Default target
 all: setup build
 
 # Setup target - installs dependencies and initializes the project
-setup: check-deps install-deps init-project
+setup: check-deps install-deps download-deps init-project
 
 # Build target - builds CLI tool and web interface
 build: directories $(TARGET) web-build
+
+# Download required header-only libraries
+download-deps:
+	@echo "Downloading dependencies..."
+	@mkdir -p $(INCLUDE_DIR)
+	@if [ ! -f "$(INCLUDE_DIR)/json.hpp" ]; then \
+		echo "Downloading nlohmann/json..." && \
+		curl -sSL https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp -o $(INCLUDE_DIR)/json.hpp; \
+	fi
+	@if [ ! -f "$(INCLUDE_DIR)/spdlog/spdlog.h" ]; then \
+		echo "Downloading spdlog..." && \
+		rm -rf /tmp/spdlog && \
+		git clone --depth 1 https://github.com/gabime/spdlog.git /tmp/spdlog && \
+		cp -r /tmp/spdlog/include/spdlog $(INCLUDE_DIR)/ && \
+		rm -rf /tmp/spdlog; \
+	fi
+	@if [ ! -f "$(INCLUDE_DIR)/httplib.h" ]; then \
+		echo "Downloading cpp-httplib..." && \
+		curl -sSL https://raw.githubusercontent.com/yhirose/cpp-httplib/master/httplib.h -o $(INCLUDE_DIR)/httplib.h; \
+	fi
+	@if [ ! -f "$(INCLUDE_DIR)/websocketpp" ]; then \
+		echo "Downloading WebSocket++..." && \
+		rm -rf /tmp/websocketpp && \
+		git clone --depth 1 https://github.com/zaphoyd/websocketpp.git /tmp/websocketpp && \
+		cp -r /tmp/websocketpp/websocketpp $(INCLUDE_DIR)/ && \
+		rm -rf /tmp/websocketpp; \
+	fi
 
 # Check for required dependencies
 check-deps:
@@ -43,7 +71,6 @@ install-deps:
 	@sudo apt-get update
 	@sudo apt-get install -y build-essential curl wget git pkg-config
 	@sudo apt-get install -y libcurl4-openssl-dev libssl-dev libcrypto++-dev
-	@sudo apt-get install -y libspdlog-dev nlohmann-json3-dev
 	@sudo apt-get install -y libboost-all-dev libsystemd-dev
 
 # Initialize project (create directories, generate keys, etc.)
@@ -111,4 +138,5 @@ clean:
 # Clean everything including dependencies and configuration
 clean-all: clean
 	@rm -rf config/* keys/* logs/* cache/* test_data/* certs/*
+	@rm -rf $(INCLUDE_DIR)/json.hpp $(INCLUDE_DIR)/spdlog $(INCLUDE_DIR)/httplib.h $(INCLUDE_DIR)/websocketpp
 	@echo "Cleaned all project files" 
