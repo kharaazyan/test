@@ -185,7 +185,8 @@ all: deps main web-build
 
 web-build:
 	@set -e; \
-	echo "$(BLUE)[INFO] Building web interface...$(NC)"; \
+	echo "$(BLUE)[INFO] Building web interface in dir: $(CURDIR)$(NC)"; \
+	ls -al $(WEB_DIR) || true; \
 	if [ -f "$(WEB_DIR)/frontend/package.json" ]; then \
 		echo "$(BLUE)[INFO] Building frontend...$(NC)"; \
 		cd $(WEB_DIR)/frontend; \
