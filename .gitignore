@@ -1,0 +1,119 @@
+# Build artifacts
+build/
+bin/
+dist/
+*.o
+*.a
+*.so
+*.d
+*.exe
+
+# Dependencies
+deps/
+external/
+*.tar.gz
+*.zip
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.yarn
+
+# Web build
+web/frontend/dist/
+web/backend/dist/
+web-ui/dist/
+.web-pids
+
+# Configuration and keys (sensitive)
+keys/
+config/settings.json
+config/example-settings.json
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Logs and cache
+logs/
+cache/
+*.log
+*.tmp
+*.cache
+
+# Test data
+test_data/
+*.test
+*.benchmark
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# IPFS data
+.ipfs/
+ipfs_data/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Core dumps
+core
+core.*
+
+# Valgrind output
+valgrind-out.txt
+
+# Coverage reports
+*.gcov
+*.gcda
+*.gcno
+coverage/
+
+# Documentation build
+docs/build/
+docs/_build/
+
+# Package files
+*.deb
+*.rpm
+*.tgz
+
+# Archive files
+*.tar
+*.gz
+*.bz2
+*.xz
+
+# Binary files
+*.bin
+*.dat
+
+# Scripts with sensitive data
+setup_local.sh
+deploy.sh 

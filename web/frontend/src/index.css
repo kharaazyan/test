@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #3182ce;
+  --secondary-color: #805ad5;
+  --success-color: #48bb78;
+  --warning-color: #ecc94b;
+  --danger-color: #e53e3e;
+  --background-color: #1a1b1e;
+  --card-background: #25262b;
+  --text-color: #c1c2c5;
+  --text-color-dimmed: #909296;
+  --border-color: #2c2e33;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: 'JetBrains Mono', monospace;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Кастомные скроллбары */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-color-dimmed);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Стили для карточек */
+.mantine-Card-root {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.mantine-Card-root:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Стили для кнопок */
+.mantine-Button-root {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease-in-out;
+}
+
+.mantine-Button-root:hover {
+  transform: translateY(-1px);
+}
+
+/* Стили для бейджей */
+.mantine-Badge-root {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Стили для заголовков */
+.mantine-Title-root {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.5px;
+}
+
+/* Стили для таблиц */
+.mantine-Table-root {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.mantine-Table-root th {
+  background-color: var(--card-background);
+  color: var(--text-color);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.mantine-Table-root td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mantine-Table-root tr:last-child td {
+  border-bottom: none;
+}
+
+/* Стили для инпутов */
+.mantine-TextInput-input,
+.mantine-Select-input,
+.mantine-Textarea-input {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+  color: var(--text-color);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.mantine-TextInput-input:focus,
+.mantine-Select-input:focus,
+.mantine-Textarea-input:focus {
+  border-color: var(--primary-color);
+}
