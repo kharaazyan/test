@@ -11,7 +11,7 @@ DIST_DIR     := dist
 TEST_DIR     := tests
 DEPS_DIR     := deps
 EXTERNAL_DIR := external
-WEB_DIR      := web  # added web directory
+WEB_DIR      := web
 
 # === Tools ===
 CXX          ?= g++
@@ -21,7 +21,7 @@ MKDIR        := mkdir -p
 CURL         := curl
 WGET         := wget
 GIT          := git
-NPM          := npm  # added npm tool
+NPM          := npm
 
 .ONESHELL:  # use single shell per recipe
 
