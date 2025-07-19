@@ -1,6 +1,23 @@
-import { useState } from 'react'
-import { MantineProvider, AppShell, Group, Title, UnstyledButton, rem } from '@mantine/core'
-import { IconTerminal2, IconFileText, IconKey, IconNetwork, IconDashboard } from '@tabler/icons-react'
+import { useState, useEffect } from 'react'
+import {
+  MantineProvider,
+  AppShell,
+  Group,
+  Title,
+  UnstyledButton,
+  rem,
+  Box,
+  Text,
+  Transition,
+  Paper,
+} from '@mantine/core'
+import {
+  IconTerminal2,
+  IconFileText,
+  IconKey,
+  IconNetwork,
+  IconDashboard,
+} from '@tabler/icons-react'
 import Terminal from './components/Terminal'
 import LogViewer from './components/LogViewer'
 import KeyManagement from './components/KeyManagement'
@@ -31,18 +48,32 @@ function MainLink({ icon: Icon, label, color, active, onClick }: MainLinkProps) 
       sx={(theme) => ({
         display: 'block',
         width: '100%',
-        padding: theme.spacing.xs,
-        borderRadius: theme.radius.sm,
-        color: active ? theme.white : theme.colors.dark[0],
-        backgroundColor: active ? theme.fn.variant({ variant: 'light', color }).background : 'transparent',
+        padding: theme.spacing.md,
+        borderRadius: theme.radius.md,
+        transition: 'all 0.2s ease',
+        color: active ? theme.white : theme.colors.gray[0],
+        background: active
+          ? `linear-gradient(45deg, ${theme.fn.rgba(
+              theme.colors[color][9],
+              0.8
+            )}, ${theme.fn.rgba(theme.colors[color][7], 0.8)})`
+          : 'transparent',
         '&:hover': {
-          backgroundColor: active ? theme.fn.variant({ variant: 'light', color }).background : theme.colors.dark[6],
+          background: active
+            ? `linear-gradient(45deg, ${theme.fn.rgba(
+                theme.colors[color][9],
+                0.8
+              )}, ${theme.fn.rgba(theme.colors[color][7], 0.8)})`
+            : theme.fn.rgba(theme.colors.dark[6], 0.5),
+          transform: 'translateX(6px)',
         },
       })}
     >
       <Group>
-        <Icon size={24} stroke={1.5} />
-        <span style={{ fontSize: rem(14) }}>{label}</span>
+        <Icon size={24} stroke={1.5} style={{ transition: 'all 0.2s ease' }} />
+        <Text size="sm" fw={500}>
+          {label}
+        </Text>
       </Group>
     </UnstyledButton>
   )
@@ -50,7 +81,12 @@ function MainLink({ icon: Icon, label, color, active, onClick }: MainLinkProps) 
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Dashboard')
+  const [mounted, setMounted] = useState(false)
   const preferredColorScheme = useColorScheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const renderContent = () => {
     switch (activeTab) {
@@ -75,60 +111,137 @@ export default function App() {
         colorScheme: 'dark',
         primaryColor: 'blue',
         primaryShade: 6,
-        fontFamily: 'JetBrains Mono, monospace',
-        headings: { fontFamily: 'JetBrains Mono, monospace' },
+        fontFamily: 'Inter, sans-serif',
+        headings: { fontFamily: 'Inter, sans-serif' },
         components: {
           Button: {
             styles: {
               root: {
                 fontWeight: 600,
+                transition: 'all 0.2s ease',
+              },
+            },
+          },
+          Paper: {
+            styles: {
+              root: {
+                transition: 'all 0.2s ease',
               },
             },
           },
         },
         globalStyles: (theme) => ({
-          body: {
-            backgroundColor: theme.colors.dark[8],
+          'body, #root': {
+            backgroundColor: '#1A1B1E',
+            minHeight: '100vh',
+            margin: 0,
+            padding: 0,
           },
         }),
       }}
+      withGlobalStyles
+      withNormalizeCSS
     >
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(45deg, #1A1B1E 0%, #2C2E33 100%)',
+          zIndex: -1,
+        }}
+      />
       <AppShell
         padding="md"
         navbar={{
-          width: 250,
+          width: 280,
           breakpoint: 'sm',
           collapsed: { mobile: false },
         }}
         header={{
-          height: 60,
+          height: 70,
         }}
+        styles={(theme) => ({
+          main: {
+            backgroundColor: 'transparent',
+          },
+        })}
       >
-        <AppShell.Navbar p="xs">
+        <AppShell.Navbar
+          p="md"
+          style={{
+            background: 'rgba(26, 27, 30, 0.95)',
+            backdropFilter: 'blur(10px)',
+            border: 'none',
+          }}
+        >
           <AppShell.Section grow mt="xs">
-            {mainLinks.map((link) => (
-              <MainLink
-                {...link}
-                key={link.label}
-                active={activeTab === link.label}
-                onClick={() => setActiveTab(link.label)}
-              />
-            ))}
+            <Box mb="xl">
+              <Text size="xs" tt="uppercase" fw={700} c="dimmed" mb="md">
+                Navigation
+              </Text>
+              {mainLinks.map((link) => (
+                <Box mb="xs" key={link.label}>
+                  <MainLink
+                    {...link}
+                    active={activeTab === link.label}
+                    onClick={() => setActiveTab(link.label)}
+                  />
+                </Box>
+              ))}
+            </Box>
           </AppShell.Section>
         </AppShell.Navbar>
 
-        <AppShell.Header p="xs" style={{ backdropFilter: 'blur(10px)' }}>
+        <AppShell.Header
+          p="md"
+          style={{
+            background: 'rgba(26, 27, 30, 0.95)',
+            backdropFilter: 'blur(10px)',
+            borderBottom: 'none',
+          }}
+        >
           <Group justify="space-between" h="100%">
             <Group>
-              <Title order={3} style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+              <Title
+                order={3}
+                style={{
+                  background: 'linear-gradient(45deg, #3B82F6, #60A5FA)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
                 CLI-NetSecTool
               </Title>
             </Group>
           </Group>
         </AppShell.Header>
 
-        <AppShell.Main style={{ backgroundColor: 'var(--mantine-color-dark-8)' }}>
-          {renderContent()}
+        <AppShell.Main>
+          <Transition
+            mounted={mounted}
+            transition="fade"
+            duration={400}
+            timingFunction="ease"
+          >
+            {(styles) => (
+              <Paper
+                shadow="md"
+                radius="lg"
+                p="md"
+                style={{
+                  ...styles,
+                  background: 'rgba(26, 27, 30, 0.95)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+              >
+                {renderContent()}
+              </Paper>
+            )}
+          </Transition>
         </AppShell.Main>
       </AppShell>
     </MantineProvider>

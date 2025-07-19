@@ -1,16 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-  --primary-color: #3182ce;
-  --secondary-color: #805ad5;
-  --success-color: #48bb78;
-  --warning-color: #ecc94b;
-  --danger-color: #e53e3e;
-  --background-color: #1a1b1e;
-  --card-background: #25262b;
-  --text-color: #c1c2c5;
-  --text-color-dimmed: #909296;
-  --border-color: #2c2e33;
+  --primary-color: #3B82F6;
+  --primary-color-light: #60A5FA;
+  --secondary-color: #8B5CF6;
+  --success-color: #10B981;
+  --warning-color: #F59E0B;
+  --danger-color: #EF4444;
+  --background-color: #1A1B1E;
+  --background-color-light: #2C2E33;
+  --card-background: rgba(26, 27, 30, 0.95);
+  --text-color: #F3F4F6;
+  --text-color-dimmed: #9CA3AF;
+  --border-color: rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -19,12 +21,18 @@
   box-sizing: border-box;
 }
 
-body {
+html, body, #root {
+  height: 100%;
+  min-height: 100vh;
   background-color: var(--background-color);
   color: var(--text-color);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  overflow-x: hidden;
 }
 
 /* Кастомные скроллбары */
@@ -38,12 +46,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-color-dimmed);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Анимации */
@@ -64,39 +72,44 @@ body {
 
 /* Стили для карточек */
 .mantine-Card-root {
-  background-color: var(--card-background);
-  border-color: var(--border-color);
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  background: var(--card-background);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease-in-out;
 }
 
 .mantine-Card-root:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 /* Стили для кнопок */
 .mantine-Button-root {
-  font-family: 'JetBrains Mono', monospace;
-  text-transform: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
   letter-spacing: 0.5px;
   transition: all 0.2s ease-in-out;
 }
 
 .mantine-Button-root:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 /* Стили для бейджей */
 .mantine-Badge-root {
-  font-family: 'JetBrains Mono', monospace;
-  text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
   letter-spacing: 0.5px;
 }
 
 /* Стили для заголовков */
 .mantine-Title-root {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
   letter-spacing: -0.5px;
+  background: linear-gradient(45deg, #fff, rgba(255,255,255,0.7));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Стили для таблиц */
@@ -107,36 +120,89 @@ body {
 }
 
 .mantine-Table-root th {
-  background-color: var(--card-background);
-  color: var(--text-color);
+  background: var(--card-background);
+  color: var(--text-color-dimmed);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 12px 16px;
-  border-bottom: 2px solid var(--border-color);
-}
-
-.mantine-Table-root td {
-  padding: 12px 16px;
+  padding: 16px;
   border-bottom: 1px solid var(--border-color);
 }
 
-.mantine-Table-root tr:last-child td {
-  border-bottom: none;
+.mantine-Table-root td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.mantine-Table-root tr {
+  transition: background-color 0.2s ease;
+}
+
+.mantine-Table-root tr:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 /* Стили для инпутов */
 .mantine-TextInput-input,
 .mantine-Select-input,
 .mantine-Textarea-input {
-  background-color: var(--card-background);
-  border-color: var(--border-color);
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
   color: var(--text-color);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s ease;
 }
 
 .mantine-TextInput-input:focus,
 .mantine-Select-input:focus,
 .mantine-Textarea-input:focus {
   border-color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.mantine-TextInput-label,
+.mantine-Select-label,
+.mantine-Textarea-label {
+  color: var(--text-color);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+/* Стили для монопространственного текста */
+.monospace {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Стили для графиков и диаграмм */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.recharts-tooltip-wrapper {
+  background: var(--card-background) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+/* Стили для модальных окон */
+.mantine-Modal-root {
+  backdrop-filter: blur(10px);
+}
+
+.mantine-Modal-content {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+}
+
+.mantine-Modal-header {
+  background: var(--card-background);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mantine-Modal-title {
+  color: var(--text-color);
+  font-weight: 600;
 }

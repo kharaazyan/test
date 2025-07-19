@@ -12,6 +12,7 @@ import {
   ActionIcon,
   Tooltip,
   Button,
+  Box,
 } from '@mantine/core'
 import { IconSearch, IconFilter, IconDownload, IconRefresh } from '@tabler/icons-react'
 
@@ -64,6 +65,21 @@ const getLevelColor = (level: string) => {
   }
 }
 
+const getLevelGradient = (level: string) => {
+  switch (level) {
+    case 'error':
+      return 'linear-gradient(45deg, #EF4444, #F87171)'
+    case 'warning':
+      return 'linear-gradient(45deg, #F59E0B, #FBBF24)'
+    case 'info':
+      return 'linear-gradient(45deg, #3B82F6, #60A5FA)'
+    case 'debug':
+      return 'linear-gradient(45deg, #6B7280, #9CA3AF)'
+    default:
+      return 'linear-gradient(45deg, #3B82F6, #60A5FA)'
+  }
+}
+
 export default function LogViewer() {
   const [search, setSearch] = useState('')
   const [level, setLevel] = useState<string | null>(null)
@@ -85,22 +101,65 @@ export default function LogViewer() {
   return (
     <Stack spacing="md">
       <Group position="apart">
-        <Title order={2}>Log Viewer</Title>
+        <Title
+          order={2}
+          sx={(theme) => ({
+            fontSize: '2rem',
+            fontWeight: 800,
+            background: 'linear-gradient(45deg, #fff, rgba(255,255,255,0.7))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          })}
+        >
+          Log Viewer
+        </Title>
         <Group spacing="xs">
           <Tooltip label="Refresh logs">
-            <ActionIcon variant="light" color="blue" size="lg">
+            <ActionIcon
+              variant="light"
+              color="blue"
+              size="lg"
+              sx={(theme) => ({
+                background: 'rgba(59, 130, 246, 0.1)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  background: 'rgba(59, 130, 246, 0.2)',
+                  transform: 'translateY(-2px)',
+                },
+              })}
+            >
               <IconRefresh size={20} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label="Download logs">
-            <ActionIcon variant="light" color="blue" size="lg">
+            <ActionIcon
+              variant="light"
+              color="blue"
+              size="lg"
+              sx={(theme) => ({
+                background: 'rgba(59, 130, 246, 0.1)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  background: 'rgba(59, 130, 246, 0.2)',
+                  transform: 'translateY(-2px)',
+                },
+              })}
+            >
               <IconDownload size={20} />
             </ActionIcon>
           </Tooltip>
         </Group>
       </Group>
 
-      <Card withBorder>
+      <Card
+        withBorder
+        radius="md"
+        sx={(theme) => ({
+          background: 'rgba(26, 27, 30, 0.5)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.1)',
+        })}
+      >
         <Group spacing="md">
           <TextInput
             icon={<IconSearch size={16} />}
@@ -108,6 +167,16 @@ export default function LogViewer() {
             value={search}
             onChange={(e) => setSearch(e.currentTarget.value)}
             style={{ flex: 1 }}
+            styles={(theme) => ({
+              input: {
+                background: 'rgba(26, 27, 30, 0.5)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: theme.colors.gray[0],
+                '&::placeholder': {
+                  color: theme.colors.gray[5],
+                },
+              },
+            })}
           />
           <Select
             icon={<IconFilter size={16} />}
@@ -121,6 +190,18 @@ export default function LogViewer() {
               { value: 'debug', label: 'Debug' },
             ]}
             style={{ width: 150 }}
+            styles={(theme) => ({
+              input: {
+                background: 'rgba(26, 27, 30, 0.5)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: theme.colors.gray[0],
+              },
+              item: {
+                '&[data-selected]': {
+                  background: theme.colors.blue[7],
+                },
+              },
+            })}
           />
           <Select
             icon={<IconFilter size={16} />}
@@ -134,33 +215,93 @@ export default function LogViewer() {
               { value: 'network', label: 'Network' },
             ]}
             style={{ width: 150 }}
+            styles={(theme) => ({
+              input: {
+                background: 'rgba(26, 27, 30, 0.5)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: theme.colors.gray[0],
+              },
+              item: {
+                '&[data-selected]': {
+                  background: theme.colors.blue[7],
+                },
+              },
+            })}
           />
-          <Button variant="light" onClick={() => {
-            setSearch('')
-            setLevel(null)
-            setSource(null)
-          }}>
+          <Button
+            variant="light"
+            onClick={() => {
+              setSearch('')
+              setLevel(null)
+              setSource(null)
+            }}
+            sx={(theme) => ({
+              background: 'rgba(59, 130, 246, 0.1)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                background: 'rgba(59, 130, 246, 0.2)',
+                transform: 'translateY(-2px)',
+              },
+            })}
+          >
             Clear Filters
           </Button>
         </Group>
       </Card>
 
-      <Card withBorder style={{ height: 'calc(100vh - 280px)' }}>
+      <Card
+        withBorder
+        radius="md"
+        sx={(theme) => ({
+          height: 'calc(100vh - 280px)',
+          background: 'rgba(26, 27, 30, 0.5)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.1)',
+        })}
+      >
         <ScrollArea h="100%">
           <Stack spacing="xs">
             {filteredLogs.map((log, index) => (
-              <Group key={index} position="apart" p="xs" style={{
-                borderBottom: index < filteredLogs.length - 1 ? '1px solid #2C2E33' : 'none',
-              }}>
-                <Group spacing="md">
-                  <Text size="sm" color="dimmed">{log.timestamp}</Text>
-                  <Badge color={getLevelColor(log.level)} variant="light">
-                    {log.level.toUpperCase()}
-                  </Badge>
-                  <Badge variant="outline">{log.source}</Badge>
-                  <Text size="sm">{log.message}</Text>
+              <Box
+                key={index}
+                sx={(theme) => ({
+                  padding: theme.spacing.md,
+                  borderBottom: index < filteredLogs.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    background: 'rgba(255,255,255,0.03)',
+                  },
+                })}
+              >
+                <Group position="apart">
+                  <Group spacing="md">
+                    <Text size="sm" color="dimmed" sx={{ fontFamily: 'JetBrains Mono' }}>
+                      {log.timestamp}
+                    </Text>
+                    <Badge
+                      variant="gradient"
+                      gradient={{ from: getLevelColor(log.level), to: getLevelColor(log.level) }}
+                      sx={{
+                        background: getLevelGradient(log.level),
+                      }}
+                    >
+                      {log.level.toUpperCase()}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      sx={(theme) => ({
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        color: theme.colors.gray[0],
+                      })}
+                    >
+                      {log.source}
+                    </Badge>
+                    <Text size="sm" sx={{ color: theme.colors.gray[0] }}>
+                      {log.message}
+                    </Text>
+                  </Group>
                 </Group>
-              </Group>
+              </Box>
             ))}
           </Stack>
         </ScrollArea>
