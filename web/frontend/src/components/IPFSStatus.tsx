@@ -50,6 +50,7 @@ interface StatCardProps {
 function StatCard({ title, value, icon: Icon, color, subtitle }: StatCardProps) {
   return (
     <Card
+      className="interactive-card"
       withBorder
       p="md"
       radius="md"

@@ -142,17 +142,7 @@ export default function App() {
       withGlobalStyles
       withNormalizeCSS
     >
-      <Box
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(45deg, #1A1B1E 0%, #2C2E33 100%)',
-          zIndex: -1,
-        }}
-      />
+      <Box className="animated-gradient" />
       <AppShell
         padding="md"
         navbar={{

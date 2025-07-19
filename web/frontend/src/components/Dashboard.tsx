@@ -24,6 +24,7 @@ function StatsCard({ title, value, icon: Icon, color }: StatsCardProps) {
   const theme = useMantineTheme()
   return (
     <Paper
+      className="interactive-card"
       withBorder
       p="md"
       radius="md"
