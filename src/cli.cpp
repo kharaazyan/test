@@ -6,6 +6,8 @@
 #include <iostream>
 #include <filesystem>
 #include <cstdlib>
+#include <thread>
+#include <chrono>
 #include "termcolor/termcolor.hpp"
 #include "json.hpp"
 
@@ -54,6 +56,47 @@ std::string resolveIPNSKey() {
     return cid;
 }
 
+// Экранирование пробелов в пути
+std::string escapePath(const std::string& path) {
+    std::string escaped;
+    for (char c : path) {
+        if (c == ' ') {
+            escaped += "\\ ";
+        } else {
+            escaped += c;
+        }
+    }
+    return escaped;
+}
+
+// Запуск веб-сервера
+void startWebServer() {
+    fs::path currentPath = fs::current_path();
+    fs::path webDir = currentPath / "web";
+    fs::path backendDir = webDir / "backend";
+    fs::path frontendDir = webDir / "frontend";
+    
+    // Запускаем backend
+    std::string backendCmd = "cd '" + backendDir.string() + "' && npm run start &";
+    system(backendCmd.c_str());
+    
+    // Даем время на запуск backend
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    
+    // Запускаем frontend
+    std::string frontendCmd = "cd '" + frontendDir.string() + "' && npm run preview &";
+    system(frontendCmd.c_str());
+    
+    // Даем время на запуск frontend
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+}
+
+// Остановка веб-сервера
+void stopWebServer() {
+    system("pkill -f 'node.*backend'");
+    system("pkill -f 'vite.*preview'");
+}
+
 void CLI::run()
 {
     std::cout << termcolor::bold << termcolor::cyan;
@@ -73,8 +116,8 @@ void CLI::run()
     std::cout << "\n";
 
     // Автоматически запускаем веб-интерфейс при старте
-    std::string webCommand = "./start-web.sh";
-    system(webCommand.c_str());
+    startWebServer();
+
 
     std::string command;
 
@@ -115,19 +158,16 @@ void CLI::run()
         }
         else if (command == "web start" || command == "web")
         {
-            std::string webCommand = "./start-web.sh";
-            system(webCommand.c_str());
+            startWebServer();
         }
         else if (command == "web stop")
         {
-            std::string webCommand = "./stop-web.sh";
-            system(webCommand.c_str());
+            stopWebServer();
+            std::cout << termcolor::cyan << "Web interface stopped\n" << termcolor::reset;
         }
         else if (command == "exit")
         {
-            // Останавливаем веб-интерфейс при выходе
-            std::string webCommand = "./stop-web.sh";
-            system(webCommand.c_str());
+            stopWebServer();
             break;
         }
         else

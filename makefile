@@ -172,10 +172,11 @@ install-deps: check-deps download-external-deps
 	@sudo apt-get install -y build-essential || true
 	@sudo apt-get install -y curl wget git pkg-config || true
 	@sudo apt-get install -y libcurl4-openssl-dev libssl-dev libspdlog-dev nlohmann-json3-dev || true
+	@sudo apt-get install -y nodejs npm || true
 	@echo "$(GREEN)[✔] Dependencies installation complete$(NC)"
 
 # === Build Targets ===
-.PHONY: all clean rebuild install uninstall test lint format docs help deps main setup auto-clean web-build
+.PHONY: all clean rebuild install uninstall test lint format docs help deps main setup auto-clean web-build clean-all run
 
 # Default target (CLI + Web)
 all: deps main web-build
@@ -248,8 +249,9 @@ $(BUILD_DIR) $(BIN_DIR) $(DIST_DIR) $(DEPS_DIR) $(EXTERNAL_DIR):
 -include $(DEPS)
 
 clean:
-	$(Q)$(RM) $(BUILD_DIR) $(BIN_DIR) $(DIST_DIR)
-	@echo "$(GREEN)[✔] Cleaned$(NC)"
+	@echo "$(BLUE)[INFO] Cleaning build artifacts...$(NC)"
+	$(Q)$(RM) $(BUILD_DIR) $(BIN_DIR) $(DIST_DIR) $(DEPS_DIR)
+	@echo "$(GREEN)[✔] Clean complete$(NC)"
 
 clean-deps:
 	$(Q)$(RM) $(DEPS_DIR)
@@ -259,8 +261,15 @@ clean-external:
 	$(Q)$(RM) $(EXTERNAL_DIR)
 	@echo "$(GREEN)[✔] External libraries cleaned$(NC)"
 
-clean-all: clean clean-deps clean-external
-	@echo "$(GREEN)[✔] All cleaned$(NC)"
+clean-all: clean
+	@echo "$(BLUE)[INFO] Cleaning all artifacts including node_modules...$(NC)"
+	@$(RM) $(WEB_DIR)/frontend/node_modules && \
+	$(RM) $(WEB_DIR)/backend/node_modules && \
+	$(RM) $(WEB_DIR)/frontend/dist && \
+	$(RM) $(WEB_DIR)/backend/dist && \
+	$(RM) $(WEB_DIR)/frontend/package-lock.json && \
+	$(RM) $(WEB_DIR)/backend/package-lock.json && \
+	echo "$(GREEN)[✔] Full clean complete$(NC)"
 
 # Auto-clean target
 auto-clean:
@@ -320,3 +329,7 @@ help:
 	@echo "  termcolor (CLI colors)"
 	@echo "  IPFS v0.20.0 (distributed storage)"
 	@echo "  Standard Ubuntu libraries" 
+
+# Run target
+run:
+	@./$(TARGET) 

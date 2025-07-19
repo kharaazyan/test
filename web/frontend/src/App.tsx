@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MantineProvider, AppShell, Navbar, Header, Group, Title, UnstyledButton, rem } from '@mantine/core'
+import { MantineProvider, AppShell, Group, Title, UnstyledButton, rem } from '@mantine/core'
 import { IconTerminal2, IconFileText, IconKey, IconNetwork, IconDashboard } from '@tabler/icons-react'
 import Terminal from './components/Terminal'
 import LogViewer from './components/LogViewer'
@@ -95,38 +95,41 @@ export default function App() {
     >
       <AppShell
         padding="md"
-        navbar={
-          <Navbar width={{ base: 250 }} p="xs">
-            <Navbar.Section grow mt="xs">
-              {mainLinks.map((link) => (
-                <MainLink
-                  {...link}
-                  key={link.label}
-                  active={activeTab === link.label}
-                  onClick={() => setActiveTab(link.label)}
-                />
-              ))}
-            </Navbar.Section>
-          </Navbar>
-        }
-        header={
-          <Header height={60} p="xs" style={{ backdropFilter: 'blur(10px)' }}>
-            <Group position="apart" sx={{ height: '100%' }}>
-              <Group>
-                <Title order={3} style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                  CLI-NetSecTool
-                </Title>
-              </Group>
-            </Group>
-          </Header>
-        }
-        styles={(theme) => ({
-          main: {
-            backgroundColor: theme.colors.dark[8],
-          },
-        })}
+        navbar={{
+          width: 250,
+          breakpoint: 'sm',
+          collapsed: { mobile: false },
+        }}
+        header={{
+          height: 60,
+        }}
       >
-        {renderContent()}
+        <AppShell.Navbar p="xs">
+          <AppShell.Section grow mt="xs">
+            {mainLinks.map((link) => (
+              <MainLink
+                {...link}
+                key={link.label}
+                active={activeTab === link.label}
+                onClick={() => setActiveTab(link.label)}
+              />
+            ))}
+          </AppShell.Section>
+        </AppShell.Navbar>
+
+        <AppShell.Header p="xs" style={{ backdropFilter: 'blur(10px)' }}>
+          <Group justify="space-between" h="100%">
+            <Group>
+              <Title order={3} style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                CLI-NetSecTool
+              </Title>
+            </Group>
+          </Group>
+        </AppShell.Header>
+
+        <AppShell.Main style={{ backgroundColor: 'var(--mantine-color-dark-8)' }}>
+          {renderContent()}
+        </AppShell.Main>
       </AppShell>
     </MantineProvider>
   )

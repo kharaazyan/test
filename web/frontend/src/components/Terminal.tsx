@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Card, Title, Stack } from '@mantine/core'
 import { Terminal as XTerm } from 'xterm'
 import { FitAddon } from '@xterm/addon-fit'
-import { WebLinksAddon } from '@xterm/addon-web-links'
+import { WebLinksAddon } from 'xterm-addon-web-links'
 import 'xterm/css/xterm.css'
 
 export default function Terminal() {
